@@ -95,11 +95,11 @@ class OrdineTest {
     @Test
     void gliScontiRispettanoLeSoglieDiQuantita() {
         // Ogni caso usa un prodotto indipendente per coprire i confini delle fasce.
-        int[] quantita = { 1, 9, 10, 49, 50, 100 };
-        int[] percentualiAttese = { 0, 0, 5, 5, 10, 10 };
-        String[] subtotaliAttesi = { "2.00", "18.00", "19.00", "93.10", "90.00", "180.00" };
+        int[] quantita = { 1, 9, 10, 49, 50, 100, 101 };
+        int[] percentualiAttese = { 0, 0, 5, 5, 10, 10, 10 };
+        String[] subtotaliAttesi = { "2.00", "18.00", "19.00", "93.10", "90.00", "180.00", "181.80" };
         for (int indice = 0; indice < quantita.length; indice++) {
-            Prodotto prodotto = new Prodotto("SCONTO", "Prodotto scontabile", new BigDecimal("2.00"), 100, 0);
+            Prodotto prodotto = new Prodotto("SCONTO", "Prodotto scontabile", new BigDecimal("2.00"), 101, 0);
             Ordine ordine = new Ordine("Rossi", ADESSO);
             ordine.aggiungiRiga(prodotto, quantita[indice]);
             assertEquals(percentualiAttese[indice], ordine.getRighe().get(0).getPercentualeSconto(),
