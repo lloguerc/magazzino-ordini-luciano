@@ -43,4 +43,8 @@ public class CatalogoService {
         movimenti.registraCarico(prodotto, quantita, nota);
         return prodotto;
     }
+
+    public Prodotto riassortisci(String codice, int quantita) {
+        return riassortisci(codice, quantita, null);
+    }
 }

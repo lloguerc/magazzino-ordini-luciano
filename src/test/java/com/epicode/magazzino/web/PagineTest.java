@@ -1,16 +1,22 @@
 package com.epicode.magazzino.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.epicode.magazzino.model.Ordine;
+import com.epicode.magazzino.model.MovimentoMagazzino;
 import com.epicode.magazzino.model.Prodotto;
+import com.epicode.magazzino.model.TipoMovimento;
+import com.epicode.magazzino.repository.MovimentoRepository;
 import com.epicode.magazzino.repository.ProdottoRepository;
+import com.epicode.magazzino.service.CatalogoService;
 import com.epicode.magazzino.service.NuovoOrdine;
 import com.epicode.magazzino.service.OrdineService;
 import java.math.BigDecimal;
@@ -38,11 +44,79 @@ class PagineTest {
     @Autowired
     private ProdottoRepository prodotti;
 
+    @Autowired
+    private MovimentoRepository movimenti;
+
+    @Autowired
+    private CatalogoService catalogo;
+
     @Test
     void elencoProdotti() throws Exception {
         mvc.perform(get("/prodotti"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Trapano a batteria 18V")));
+                .andExpect(content().string(containsString("Trapano a batteria 18V")))
+                .andExpect(content().string(containsString("Riassortisci")))
+                .andExpect(content().string(containsString("/prodotti/GUA-L/riassortimento")));
+    }
+
+    @Test
+    @Transactional
+    void ilFormDiRiassortimentoAccettaIlMassimoERegistraIlCarico() throws Exception {
+        prodotti.save(new Prodotto("WEB-CARICO", "Prodotto carico web", new BigDecimal("1.00"), 5, 0));
+
+        mvc.perform(get("/prodotti/WEB-CARICO/riassortimento"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("max=\"1000\"")))
+                .andExpect(content().string(containsString("maxlength=\"200\"")));
+        mvc.perform(post("/prodotti/WEB-CARICO/riassortimento")
+                .param("pezzi", "1000")
+                .param("nota", "n".repeat(200)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/prodotti"));
+
+        assertEquals(1005, prodotti.findByCodice("WEB-CARICO").orElseThrow().getDisponibili());
+        MovimentoMagazzino movimento = movimenti.findAll().stream()
+                .filter(m -> m.getProdotto().getCodice().equals("WEB-CARICO"))
+                .findFirst().orElseThrow();
+        assertEquals(TipoMovimento.CARICO, movimento.getTipo());
+        assertEquals(1000, movimento.getQuantita());
+        assertEquals("n".repeat(200), movimento.getNota());
+    }
+
+    @Test
+    @Transactional
+    void formRifiutaValoriNonValidiSenzaModificareLaGiacenza() throws Exception {
+        prodotti.save(new Prodotto("WEB-ERRORE", "Prodotto errore web", new BigDecimal("1.00"), 5, 0));
+
+        mvc.perform(post("/prodotti/WEB-ERRORE/riassortimento").param("pezzi", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("compreso tra 1 e 1000 pezzi")));
+        mvc.perform(post("/prodotti/WEB-ERRORE/riassortimento").param("pezzi", "non-intero"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("numero intero di pezzi valido")));
+        mvc.perform(post("/prodotti/WEB-ERRORE/riassortimento")
+                .param("pezzi", "1")
+                .param("nota", "n".repeat(201)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("La nota non può superare 200 caratteri")));
+
+        assertEquals(5, prodotti.findByCodice("WEB-ERRORE").orElseThrow().getDisponibili());
+        assertEquals(0, movimenti.findAll().stream()
+                .filter(m -> m.getProdotto().getCodice().equals("WEB-ERRORE"))
+                .count());
+    }
+
+    @Test
+    @Transactional
+    void laPaginaMovimentiEIlMenuSonoDisponibili() throws Exception {
+        prodotti.save(new Prodotto("WEB-MOV", "Prodotto pagina movimenti", new BigDecimal("1.00"), 0, 0));
+        catalogo.riassortisci("WEB-MOV", 1, "Arrivo");
+
+        mvc.perform(get("/movimenti"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Movimenti")))
+                .andExpect(content().string(containsString("Prodotto pagina movimenti")))
+                .andExpect(content().string(containsString("Arrivo")));
     }
 
     @Test
