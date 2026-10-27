@@ -110,6 +110,23 @@ class OrdineTest {
     }
 
     @Test
+    void loScontoRestaAlDieciPercentoAncheOltreCentoPezzi() {
+        // R1 include gia' tutte le quantita' da 50 in su, senza ulteriori aumenti.
+        int[] quantita = { 101, 1000 };
+        String[] subtotaliAttesi = { "181.80", "1800.00" };
+        for (int indice = 0; indice < quantita.length; indice++) {
+            Prodotto prodotto = new Prodotto("MASSIMO", "Prodotto ad alta quantita'",
+                    new BigDecimal("2.00"), 1000, 0);
+            Ordine ordine = new Ordine("Rossi", ADESSO);
+            ordine.aggiungiRiga(prodotto, quantita[indice]);
+            assertEquals(10, ordine.getRighe().get(0).getPercentualeSconto(),
+                    "Quantita: " + quantita[indice]);
+            assertEquals(new BigDecimal(subtotaliAttesi[indice]), ordine.getRighe().get(0).subtotale(),
+                    "Quantita: " + quantita[indice]);
+        }
+    }
+
+    @Test
     void loScontoSiArrotondaSoloSulSubtotaleFinale() {
         // Il netto 9,595 deve diventare 9,60, senza arrotondare prima lo sconto.
         Prodotto prodotto = new Prodotto("CENT", "Prodotto al centesimo", new BigDecimal("1.01"), 10, 0);

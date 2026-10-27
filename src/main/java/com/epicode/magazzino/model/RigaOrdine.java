@@ -54,8 +54,8 @@ public class RigaOrdine {
         if (quantita >= 50) {
             return 10;
         }
-        if (quantita >= 10) {
-            return 5;
+        if (quantita >= 11) {
+            return 15;
         }
         return 0;
     }
