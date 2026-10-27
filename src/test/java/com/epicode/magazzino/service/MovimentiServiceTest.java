@@ -51,11 +51,13 @@ class MovimentiServiceTest {
         assertEquals(1001, prodotti.findByCodice("MOV-TEST").orElseThrow().getDisponibili());
         List<MovimentoMagazzino> registrati = movimenti.findAll();
         assertEquals(2, registrati.size());
-        assertEquals(TipoMovimento.CARICO, registrati.get(1).getTipo());
-        assertEquals(1000, registrati.get(1).getQuantita());
-        assertEquals(nota, registrati.get(1).getNota());
-        assertEquals("MOV-TEST", registrati.get(1).getProdotto().getCodice());
-        assertNotNull(registrati.get(1).getDataOra());
+        MovimentoMagazzino ultimoCarico = registrati.stream()
+                .filter(m -> m.getQuantita() == 1000)
+                .findFirst().orElseThrow();
+        assertEquals(TipoMovimento.CARICO, ultimoCarico.getTipo());
+        assertEquals(nota, ultimoCarico.getNota());
+        assertEquals("MOV-TEST", ultimoCarico.getProdotto().getCodice());
+        assertNotNull(ultimoCarico.getDataOra());
     }
 
     @Test

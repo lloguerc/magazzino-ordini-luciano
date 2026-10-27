@@ -29,9 +29,9 @@ scrivere, verificare e rivedere agli agenti.
 
 ```
 src/main/java/com/epicode/magazzino
-├── model/        entità e regole di business (Prodotto, Ordine, RigaOrdine, StatoOrdine, eccezioni)
+├── model/        entità e regole di business (Prodotto, Ordine, RigaOrdine, MovimentoMagazzino, eccezioni)
 ├── repository/   Spring Data JPA
-├── service/      casi d'uso transazionali (CatalogoService, OrdineService, NuovoOrdine)
+├── service/      casi d'uso transazionali (CatalogoService, OrdineService, MovimentiService)
 ├── web/          controller Thymeleaf, form, gestione errori
 └── config/       orologio (Clock) e dati iniziali
 src/main/resources/templates   le pagine Thymeleaf
@@ -53,6 +53,7 @@ transazione.
 - Sconto sulla quantita' consolidata della riga: 0% da 1 a 9 pezzi, 5% da 10 a 49, 10% da 50 in su; arrotondamento `HALF_UP` solo sul subtotale finale.
 - `Ordine.totale()` resta il totale merce scontato. Spedizione di 9,90 euro sotto 150,00 euro di merce, gratuita da 150,00 euro inclusi.
 - `totaleDaPagare()` somma merce e spedizione. Il dettaglio mostra sconto e riepilogo; l'elenco mostra il totale da pagare.
+- I riassortimenti registrano un movimento `CARICO`; la creazione e l'annullamento di un ordine registrano rispettivamente `SCARICO` e `RESO`. Lo storico è consultabile in `/movimenti`.
 
 Piano e verifiche: [docs/piani/sconti-quantita.md](docs/piani/sconti-quantita.md).
 
